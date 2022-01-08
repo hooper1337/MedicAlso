@@ -11,7 +11,7 @@ void trataSig(int i)
     exit(EXIT_SUCCESS);
 }
 
-void main()
+int main(int argc, char **argv)
 {
     Pessoa utente;
     Balcao balcao;
@@ -22,6 +22,10 @@ void main()
     int nfd;
     fd_set read_fds;
     struct timeval tv;
+
+    strcpy(especialista.pNome, argv[1]);
+    strcpy(especialista.uNome, argv[2]);
+    strcpy(especialista.especialidade, argv[3]);
 
     if (signal(SIGINT, trataSig) == SIG_ERR)
     {
@@ -51,10 +55,11 @@ void main()
         exit(EXIT_FAILURE);
     }
     printf("\nMÉDICO [%d] CONFIGURADO!\n",getpid());
+    printf("\n%s apresente-se ao serviço: \n", especialista.pNome);
     while (1)
     {
 
-        tv.tv_sec = 5;
+        tv.tv_sec = 50;
         tv.tv_usec = 0;
 
         FD_ZERO(&read_fds);
@@ -110,4 +115,5 @@ void main()
             }
         }
     }
+    return 0;
 }

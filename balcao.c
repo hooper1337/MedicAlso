@@ -71,14 +71,13 @@ void atribuiConsulta(Balcao* aux)
         {
             for(int j = 0; j < sizeof(aux->utentes); j++)
             {
-                if(aux->utentes[j].pid != 0 && aux->utentes[j].estado == 0)
+                if(aux->utentes[j].pid != 0 && aux->utentes[j].estado == 0 && strcmp(aux->especialistas[i].especialidade, aux->utentes[j].especialidade) == 0)
                 {
                     sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, aux->utentes[j].pid);
                     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, aux->especialistas[i].pid);
                     utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
                     especialista_fd = open(ESPECIALISTA_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-
-                    printf("\nConexão estabelecida!\nUtente- %d  Medico - %d\n", aux->utentes[j].pid, aux->especialistas[i].pid);
+                    printf("\n\nConexão estabelecida!\nUtente- %d -> Medico - %d\n", aux->utentes[j].pid, aux->especialistas[i].pid);
                     write(utente_fd, &aux->especialistas[i], sizeof(aux->especialistas[i]));
                     write(especialista_fd, &aux->utentes[j], sizeof(aux->utentes[j]));
 
@@ -116,6 +115,7 @@ void main()
     balcao.utentes = malloc(atoi(getenv("MAXCLIENTES")) * sizeof(*balcao.utentes));
     balcao.especialistas = malloc(atoi(getenv("MAXMEDICOS")) * sizeof(*balcao.especialistas));
     Pessoa desconhecido;
+    char delim[] = " ";
     int nfd;
     fd_set read_fds;
     struct timeval tv;
@@ -148,46 +148,68 @@ void main()
     }
     printf("\nSERVIDOR DO BALCÃO CONFIGURADO!\n");
 
-    while (1)
-    {
-        pthread_create(&mostraArrays, NULL, &mostraListas, &balcao);
-
-        tv.tv_sec = 20;
-        tv.tv_usec = 0;
-
-        FD_ZERO(&read_fds);
-        FD_SET(0, &read_fds);
-        FD_SET(balcao_fd, &read_fds);
-
-        nfd = select(balcao_fd + 1, &read_fds, NULL, NULL, &tv);
-        if (nfd == 0)
+    if(fork() == 0){                                   
+        close(0);
+        // se estivermos associamos a extremidade de leitura do primeiro pipe ao stdin
+        dup(canalEnvio[0]);                        
+        close(canalEnvio[0]);
+        // fechamos o que está a mais
+        close(canalEnvio[1]);
+        close(1);
+        // agora associamos a extremidade de escrita do segundo pipe ao stdout
+        dup(canalReceber[1]);    
+        // voltamos a fechar o que está mais                    
+        close(canalReceber[1]);
+        close(canalReceber[0]);   
+        // depois dos pipes configurados executamos o classificador                 
+        execl("classificador","classificador",NULL);
+    }else{
+        close(canalEnvio[0]);                     
+        close(canalReceber[1]); 
+        while (1)
         {
-            printf("\nEstou a espera de médicos e utentes!\n");
-        }
-        if (nfd == -1)
-        {
-            printf("\nErro no select!\n");
-        }
+            pthread_create(&mostraArrays, NULL, &mostraListas, &balcao);
 
-        if (FD_ISSET(0, &read_fds))
-        {
-        }
+            tv.tv_sec = 25;
+            tv.tv_usec = 0;
 
-        if (FD_ISSET(balcao_fd, &read_fds))
-        {
-            read(balcao_fd, &desconhecido, sizeof(desconhecido));
-            if (desconhecido.tipoPessoa == 1)
+            FD_ZERO(&read_fds);
+            FD_SET(0, &read_fds);
+            FD_SET(balcao_fd, &read_fds);
+
+            nfd = select(balcao_fd + 1, &read_fds, NULL, NULL, &tv);
+            if (nfd == 0)
             {
-                sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
-                adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
-                atribuiConsulta(&balcao);
+                printf("\nEstou a espera de médicos e utentes!\n");
             }
-            else if (desconhecido.tipoPessoa == 2)
+            if (nfd == -1)
             {
-                sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, desconhecido.pid);
-                adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXMEDICOS")));
-                atribuiConsulta(&balcao);
+                printf("\nErro no select!\n");
+            }
+
+            if (FD_ISSET(0, &read_fds))
+            {
+            
+            }
+
+            if (FD_ISSET(balcao_fd, &read_fds))
+            {
+                read(balcao_fd, &desconhecido, sizeof(desconhecido));
+                if (desconhecido.tipoPessoa == 1)
+                {
+                    write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
+                    read(canalReceber[0],desconhecido.especialidade, sizeof(desconhecido.msg)-1);
+                    char *ptr = strtok(desconhecido.especialidade, delim);
+                    strcpy(desconhecido.especialidade, ptr);
+                    adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
+                    atribuiConsulta(&balcao);
+                }
+                else if (desconhecido.tipoPessoa == 2)
+                {
+                    adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXMEDICOS")));
+                    atribuiConsulta(&balcao);
+                }
             }
         }
-    }
+    }      
 }

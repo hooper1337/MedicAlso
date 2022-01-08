@@ -11,7 +11,7 @@ void trataSig(int i)
     exit(EXIT_SUCCESS);
 }
 
-void main()
+int main(int argc, char **argv)
 {
     Pessoa utente;
     utente.pid = getpid();
@@ -24,6 +24,9 @@ void main()
     fd_set read_fds;
     struct timeval tv;
     bool primeiraVez = true;
+
+    strcpy(utente.pNome, argv[1]);
+    strcpy(utente.uNome, argv[2]);
 
     if (signal(SIGINT, trataSig) == SIG_ERR)
     {
@@ -53,10 +56,10 @@ void main()
         exit(EXIT_FAILURE);
     }
     printf("\nUTENTE [%d] CONFIGURADO!\n",getpid());
-
+    printf("\n%s escreva os seus sintomas: \n", utente.pNome);
     while (1)
     {
-        tv.tv_sec = 5;
+        tv.tv_sec = 50;
         tv.tv_usec = 0;
 
         FD_ZERO(&read_fds);
@@ -70,7 +73,6 @@ void main()
         {
             printf("\nErro no select!\n");
         }
-
         if (FD_ISSET(0, &read_fds))
         {
             fgets(utente.msg, sizeof(utente.msg), stdin);
@@ -111,4 +113,5 @@ void main()
             }
         }
     }
+    return 0;
 }

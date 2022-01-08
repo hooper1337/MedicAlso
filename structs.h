@@ -23,13 +23,15 @@ char ESPECIALISTA_FIFO_FINAL[TAM_MAX];
 // struct para utentes e clientes
 struct pessoa
 {
-    char nome[TAM_MAX];
+    char pNome[TAM_MAX];
+    char uNome[TAM_MAX];
     pid_t pid;
     int numcliente;
     int estado; // 0 para nao, 1 para sim
     char msg[TAM_MAX];
     char sintomas[TAM_MAX];
     char especialidade[TAM_MAX];
+    int prioridade;
     int tipoPessoa; // 1 para utente, 2 para medico
 } typedef Pessoa;
 
