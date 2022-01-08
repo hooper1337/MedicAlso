@@ -3,11 +3,11 @@ C Unix Project simulating the context of an hospital
 
 # Primeira execução do programa
 # Executar os seguintes comandos
-//Definir as variaveis de ambiente
+Definir as variaveis de ambiente
 source SETENV.sh
 
-//Tornar o ficheiro classificador como executavel
+Tornar o ficheiro classificador como executavel
 chmod +x classificador
 
-//Buildar o projeto pela primeira vez
+Compilar o projeto pela primeira vez
 make all
