@@ -1,9 +1,8 @@
 # MedicAlso
 C Unix Project simulating the context of an hospital
 
-
-#Primeira execução do programa
-#Executar os seguintes comandos
+# Primeira execução do programa
+# Executar os seguintes comandos
 //Definir as variaveis de ambiente
 source SETENV.sh
 
