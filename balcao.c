@@ -78,7 +78,7 @@ void atribuiConsulta(Balcao* aux)
                     {
                         if(strcmp(aux->utentes[i].especialidade, aux->utentes[j].especialidade)==0)
                         {
-                            if(recebeMaior > aux->utentes[i].prioridade)
+                            if(recebeMaior < aux->utentes[i].prioridade)
                             {
                                 recebeMaior = aux->utentes[i].prioridade;
                             }
