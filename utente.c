@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     fd_set read_fds;
     struct timeval tv;
     bool primeiraVez = true;
+    int recebi = 0;
 
     strcpy(utente.pNome, argv[1]);
     strcpy(utente.uNome, argv[2]);
@@ -90,20 +91,27 @@ int main(int argc, char **argv)
         {
             if (utente.estado == 0)
             {
-                read(utente_fd, &especialista, sizeof(especialista));
-                printf("\nFoi-me atribuido um médico com o PID: %d\n", especialista.pid);
-                sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, especialista.pid);
-                especialista_fd = open(ESPECIALISTA_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-                if (especialista_fd == -1)
+                if(recebi == 0)
                 {
-                    perror("\nMédico não encontrou: ");
-                    printf("\n%d", especialista.pid);
-                    fprintf(stderr, "\nO Utente nao encontrou o medico!\n");
+                    read(utente_fd, &utente, sizeof(utente));
+                    printf("\nEspecialidade e pioridade: %s", utente.especialidade);
+                    recebi = 1;
                 }
                 else
                 {
-                printf("\nConversa com o médico!\n");
-                utente.estado = 1;
+                    read(utente_fd, &especialista, sizeof(especialista));
+                    sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, especialista.pid);
+                    especialista_fd = open(ESPECIALISTA_FIFO_FINAL, O_RDWR | O_NONBLOCK);
+                    if (especialista_fd == -1)
+                    {
+                        fprintf(stderr, "\nO Utente ainda não tem médico atribuido!\n");
+                    }
+                    else
+                    {
+                        printf("\nFoi-me atribuido um médico com o PID: %d\n", especialista.pid);
+                        printf("\nConversa com o médico!\n");
+                        utente.estado = 1;
+                    }
                 }
             }
             else

@@ -65,6 +65,7 @@ void *mostraListas(void *dados)
 
 void atribuiConsulta(Balcao* aux)
 {
+    int recebeMaior;
     for(int i = 0; i < sizeof(aux->especialistas); i++)
     {
         if(aux->especialistas[i].pid != 0 && aux->especialistas[i].estado == 0)
@@ -73,6 +74,42 @@ void atribuiConsulta(Balcao* aux)
             {
                 if(aux->utentes[j].pid != 0 && aux->utentes[j].estado == 0 && strcmp(aux->especialistas[i].especialidade, aux->utentes[j].especialidade) == 0)
                 {
+                    for(int i = 0; i< sizeof(aux->utentes); i++)
+                    {
+                        if(strcmp(aux->utentes[i].especialidade, aux->utentes[j].especialidade)==0)
+                        {
+                            if(recebeMaior > aux->utentes[i].prioridade)
+                            {
+                                recebeMaior = aux->utentes[i].prioridade;
+                            }
+                            if(i == sizeof(aux->utentes))
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    for(int i = 0; i < sizeof(aux->utentes); i++)
+                    {
+                        if(strcmp(aux->utentes[i].especialidade, aux->utentes[j].especialidade)==0)
+                        {
+                             if(aux->utentes[i].prioridade == recebeMaior)
+                                break;
+                             else
+                                continue;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }  
                     sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, aux->utentes[j].pid);
                     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, aux->especialistas[i].pid);
                     utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
@@ -87,7 +124,6 @@ void atribuiConsulta(Balcao* aux)
                     close(utente_fd);
                     close(especialista_fd);
                     break;
-
                 }
             }
         }
@@ -199,8 +235,17 @@ void main()
                 {
                     write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
                     read(canalReceber[0],desconhecido.especialidade, sizeof(desconhecido.msg)-1);
+                    sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
+                    utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
+                    write(utente_fd, &desconhecido, sizeof(desconhecido));
+                    close(utente_fd);
+                    // separar a mensagem do classificador
                     char *ptr = strtok(desconhecido.especialidade, delim);
+                    //guardar a especialidade no utente
                     strcpy(desconhecido.especialidade, ptr);
+                    ptr = strtok(NULL, delim);
+                    //guardar a prioridade do utente
+                    desconhecido.prioridade = atoi(ptr);
                     adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
                     atribuiConsulta(&balcao);
                 }

@@ -95,18 +95,11 @@ int main(int argc, char **argv)
             if (especialista.estado == 0)
             {
                 read(especialista_fd, &utente, sizeof(utente));
-                printf("\nFoi-me atribuido um utente com o PID: %d\n", utente.pid);
                 sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, utente.pid);
                 utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-                if (utente_fd == -1)
-                {
-                    fprintf(stderr, "\nO Medico nao encontrou o utente!\n");
-                }
-                else
-                {
+                printf("\nFoi-me atribuido um utente com o PID: %d\n", utente.pid);
                 printf("\nConversa com o utente!\n");
                 especialista.estado = 1;
-                }
             }
             else
             {
