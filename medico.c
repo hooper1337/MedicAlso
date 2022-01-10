@@ -1,6 +1,6 @@
 #include "medico.h"
 
-int balcao_fd, utente_fd, especialista_fd;
+int balcao_fd, sinal_fd, utente_fd, especialista_fd;
 
 void trataSig(int i)
 {
@@ -11,6 +11,28 @@ void trataSig(int i)
     exit(EXIT_SUCCESS);
 }
 
+void *enviarSinal(void *dados)
+{
+    Pessoa *pdados = (Pessoa *)dados;
+    while (1)
+    {
+        sleep(20);
+        
+        sinal_fd = open(SINAL_FIFO, O_RDWR | O_NONBLOCK);
+        
+        if (sinal_fd == -1)
+        {
+            fprintf(stderr, "\nO servidor não está a correr\n");
+            unlink(SINAL_FIFO);
+            exit(EXIT_FAILURE);
+        }
+
+        write(sinal_fd, &pdados, sizeof(pdados));
+
+        close(sinal_fd);
+    }
+}
+
 int main(int argc, char **argv)
 {
     Pessoa utente;
@@ -19,9 +41,11 @@ int main(int argc, char **argv)
     especialista.pid = getpid();
     especialista.estado = 0;
     especialista.tipoPessoa = 2;
+    especialista.tempo = 0;
     int nfd;
     fd_set read_fds;
     struct timeval tv;
+    pthread_t sinal;
 
     strcpy(especialista.pNome, argv[1]);
     strcpy(especialista.uNome, argv[2]);
@@ -54,11 +78,13 @@ int main(int argc, char **argv)
         unlink(UTENTE_FIFO_FINAL);
         exit(EXIT_FAILURE);
     }
-    printf("\nMÉDICO [%d] CONFIGURADO!\n",getpid());
+    printf("\nMÉDICO [%d] CONFIGURADO!\n", getpid());
     printf("\n%s apresente-se ao serviço: \n", especialista.pNome);
+
+    pthread_create(&sinal, NULL, &enviarSinal, &especialista);
+
     while (1)
     {
-
         tv.tv_sec = 50;
         tv.tv_usec = 0;
 
