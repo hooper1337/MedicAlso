@@ -1,6 +1,6 @@
 #include "balcao.h"
 
-int balcao_fd, sinal_fd, utente_fd, especialista_fd;
+int balcao_fd, sinal_fd, utente_fd, especialista_fd, numConsulta=0;
 
 void trataSig(int i)
 {
@@ -196,12 +196,15 @@ void atribuiConsulta(Balcao *aux)
                     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, aux->especialistas[i].pid);
                     utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
                     especialista_fd = open(ESPECIALISTA_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-                    printf("\n\nConexão estabelecida!\nUtente- %d -> Medico - %d\n", aux->utentes[j].pid, aux->especialistas[i].pid);
+                    numConsulta++;
+                    printf("\n\nConexão estabelecida!\nUtente- %d -> Medico - %d -> Consulta número - %d\n", aux->utentes[j].pid, aux->especialistas[i].pid, numConsulta);
                     write(utente_fd, &aux->especialistas[i], sizeof(aux->especialistas[i]));
                     write(especialista_fd, &aux->utentes[j], sizeof(aux->utentes[j]));
 
                     aux->especialistas[i].estado = 1;
                     aux->utentes[j].estado = 1;
+                    aux->especialistas[i].numConsulta = numConsulta;
+                    aux->especialistas[j].numConsulta = numConsulta;
 
                     close(utente_fd);
                     close(especialista_fd);
@@ -239,7 +242,6 @@ void main()
     struct timeval tv;
     pthread_t mostraArrays;
     pthread_t aumentar;
-    int aux = 0;
 
     // cria pipe para envio de dados
     pipe(canalEnvio);
@@ -262,7 +264,7 @@ void main()
     balcao_fd = open(BALCAO_FIFO, O_RDWR | O_NONBLOCK);
     if (balcao_fd == -1)
     {
-        perror("\nErro ao abrir fifo do balcão (RDWR/blocking\n");
+        perror("\nErro ao abrir fifo do balcão\n");
         exit(EXIT_FAILURE);
     }
     printf("\nSERVIDOR DO BALCÃO CONFIGURADO!\n");
@@ -276,13 +278,12 @@ void main()
     sinal_fd = open(SINAL_FIFO, O_RDWR | O_NONBLOCK);
     if (sinal_fd == -1)
     {
-        perror("\nErro ao abrir fifo dos sinais (RDWR/blocking\n");
+        perror("\nErro ao abrir fifo dos sinais\n");
         exit(EXIT_FAILURE);
     }
     printf("\nSINAIS DO BALCÃO CONFIGURADO!\n");
 
     pthread_create(&mostraArrays, NULL, &mostraListas, &balcao);
-
     pthread_create(&aumentar, NULL, &aumentarTempo, &balcao);
 
     if (fork() == 0)
@@ -316,7 +317,7 @@ void main()
             FD_SET(balcao_fd, &read_fds);
             FD_SET(sinal_fd, &read_fds);
 
-            nfd = select(max(balcao_fd, sinal_fd) + 1, &read_fds, NULL, NULL, &tv);
+            nfd = select(max(balcao_fd,sinal_fd) + 1, &read_fds, NULL, NULL, &tv);
             if (nfd == 0)
             {
                 printf("\nEstou a espera de médicos e utentes!\n");
@@ -333,7 +334,7 @@ void main()
             if (FD_ISSET(sinal_fd, &read_fds))
             {
                 read(sinal_fd, &desconhecido, sizeof(desconhecido));
-
+                printf("\nRECEBI! PID - %d\n", desconhecido.pid);
                 resetTempo(&balcao, desconhecido.pid);
             }
 

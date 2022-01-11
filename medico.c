@@ -28,7 +28,7 @@ void *enviarSinal(void *dados)
         }
 
         write(sinal_fd, &pdados, sizeof(pdados));
-
+        printf("\nEnviei\n");
         close(sinal_fd);
     }
 }
@@ -36,7 +36,6 @@ void *enviarSinal(void *dados)
 int main(int argc, char **argv)
 {
     Pessoa utente;
-    Balcao balcao;
     Pessoa especialista;
     especialista.pid = getpid();
     especialista.estado = 0;
@@ -107,11 +106,24 @@ int main(int argc, char **argv)
             // enviar para o balcao
             if (especialista.estado == 0)
             {
+                if(strcmp(especialista.msg, "sair\n")== 0)
+                {
+                    close(especialista_fd);
+                    unlink(ESPECIALISTA_FIFO_FINAL);
+                    kill(getpid(), SIGTERM);
+                }
                 write(balcao_fd, &especialista, sizeof(especialista));
             }
             else
             {
                 write(utente_fd, &especialista, sizeof(especialista));
+                if(strcmp(especialista.msg, "sair\n")== 0)
+                {
+                    close(especialista_fd);
+                    unlink(ESPECIALISTA_FIFO_FINAL);
+                    kill(utente.pid, SIGTERM);
+                    kill(especialista.pid, SIGTERM);
+                }
             }
         }
 
@@ -124,7 +136,7 @@ int main(int argc, char **argv)
                 sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, utente.pid);
                 utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
                 printf("\nFoi-me atribuido um utente com o PID: %d\n", utente.pid);
-                printf("\nConversa com o utente!\n");
+                printf("\nConversa com o utente!\n\n");
                 especialista.estado = 1;
             }
             else

@@ -17,7 +17,6 @@ int main(int argc, char **argv)
     utente.pid = getpid();
     utente.estado = 0;
     utente.tipoPessoa = 1;
-    Balcao balcao;
     Pessoa especialista;
     Pessoa desconhecido;
     int nfd;
@@ -108,8 +107,9 @@ int main(int argc, char **argv)
                     }
                     else
                     {
+                        close(balcao_fd);
                         printf("\nFoi-me atribuido um médico com o PID: %d\n", especialista.pid);
-                        printf("\nConversa com o médico!\n");
+                        printf("\nConversa com o médico!\n\n");
                         utente.estado = 1;
                     }
                 }

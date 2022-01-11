@@ -31,6 +31,7 @@ struct pessoa
     char msg[TAM_MAX];
     char sintomas[TAM_MAX];
     char especialidade[TAM_MAX];
+    int numConsulta;
     int prioridade;
     int tipoPessoa; // 1 para utente, 2 para medico
     int tempo;
