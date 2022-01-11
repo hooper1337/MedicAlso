@@ -2,15 +2,6 @@
 
 int balcao_fd, sinal_fd, utente_fd, especialista_fd;
 
-void trataSig(int i)
-{
-    (void)i;
-    fprintf(stderr, "\nServidor do Especialista a terminar! Interrompido via teclado\n\n");
-    close(especialista_fd);
-    unlink(ESPECIALISTA_FIFO_FINAL);
-    exit(EXIT_SUCCESS);
-}
-
 void *enviarSinal(void *dados)
 {
     Pessoa *pdados = (Pessoa *)dados;
@@ -49,12 +40,6 @@ int main(int argc, char **argv)
     strcpy(especialista.pNome, argv[1]);
     strcpy(especialista.uNome, argv[2]);
     strcpy(especialista.especialidade, argv[3]);
-
-    if (signal(SIGINT, trataSig) == SIG_ERR)
-    {
-        perror("\nNão foi possivel configurar o sinal SIGINT\n");
-        exit(EXIT_FAILURE);
-    }
 
     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, especialista.pid);
     if (mkfifo(ESPECIALISTA_FIFO_FINAL, 0777) == -1)
