@@ -1,6 +1,6 @@
 #include "balcao.h"
 
-int balcao_fd, sinal_fd, utente_fd, especialista_fd, numConsulta=0;
+int balcao_fd, sinal_fd, utente_fd, especialista_fd, numConsulta = 0;
 
 void trataSig(int i)
 {
@@ -248,6 +248,25 @@ void main()
     // cria pipe para receber dados
     pipe(canalReceber);
 
+    if (fork() == 0)
+    {
+        close(0);
+        // se estivermos associamos a extremidade de leitura do primeiro pipe ao stdin
+        dup(canalEnvio[0]);
+        close(canalEnvio[0]);
+        // fechamos o que está a mais
+        close(canalEnvio[1]);
+        close(1);
+        // agora associamos a extremidade de escrita do segundo pipe ao stdout
+        dup(canalReceber[1]);
+        // voltamos a fechar o que está mais
+        close(canalReceber[1]);
+        close(canalReceber[0]);
+        // depois dos pipes configurados executamos o classificador
+        execl("classificador", "classificador", NULL);
+        exit(-1);
+    }
+
     // inicializaArray(utentes, atoi(getenv("MAXCLIENTES")));
     if (signal(SIGINT, trataSig) == SIG_ERR)
     {
@@ -286,84 +305,69 @@ void main()
     pthread_create(&mostraArrays, NULL, &mostraListas, &balcao);
     pthread_create(&aumentar, NULL, &aumentarTempo, &balcao);
 
-    if (fork() == 0)
+    close(canalEnvio[0]);
+    close(canalReceber[1]);
+    
+    while (1)
     {
-        close(0);
-        // se estivermos associamos a extremidade de leitura do primeiro pipe ao stdin
-        dup(canalEnvio[0]);
-        close(canalEnvio[0]);
-        // fechamos o que está a mais
-        close(canalEnvio[1]);
-        close(1);
-        // agora associamos a extremidade de escrita do segundo pipe ao stdout
-        dup(canalReceber[1]);
-        // voltamos a fechar o que está mais
-        close(canalReceber[1]);
-        close(canalReceber[0]);
-        // depois dos pipes configurados executamos o classificador
-        execl("classificador", "classificador", NULL);
-    }
-    else
-    {
-        close(canalEnvio[0]);
-        close(canalReceber[1]);
-        while (1)
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+
+        FD_ZERO(&read_fds);
+        FD_SET(0, &read_fds);
+        FD_SET(balcao_fd, &read_fds);
+        FD_SET(sinal_fd, &read_fds);
+
+        nfd = select(max(balcao_fd, sinal_fd) + 1, &read_fds, NULL, NULL, &tv);
+        if (nfd == 0)
         {
-            tv.tv_sec = 5;
-            tv.tv_usec = 0;
+            printf("\nEstou a espera de médicos e utentes!\n");
+        }
+        if (nfd == -1)
+        {
+            printf("\nErro no select!\n");
+        }
 
-            FD_ZERO(&read_fds);
-            FD_SET(0, &read_fds);
-            FD_SET(balcao_fd, &read_fds);
-            FD_SET(sinal_fd, &read_fds);
+        if (FD_ISSET(0, &read_fds))
+        {
+        }
 
-            nfd = select(max(balcao_fd,sinal_fd) + 1, &read_fds, NULL, NULL, &tv);
-            if (nfd == 0)
+        if (FD_ISSET(sinal_fd, &read_fds))
+        {
+            int pid;
+            int size = read(sinal_fd, &pid, sizeof(pid));
+            if (size == sizeof(pid))
             {
-                printf("\nEstou a espera de médicos e utentes!\n");
+                printf("\nRECEBI! PID - %d\n", pid);
+                resetTempo(&balcao, pid);
             }
-            if (nfd == -1)
-            {
-                printf("\nErro no select!\n");
-            }
+        }
 
-            if (FD_ISSET(0, &read_fds))
+        if (FD_ISSET(balcao_fd, &read_fds))
+        {
+            read(balcao_fd, &desconhecido, sizeof(desconhecido));
+            if (desconhecido.tipoPessoa == 1)
             {
+                write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
+                read(canalReceber[0], desconhecido.especialidade, sizeof(desconhecido.msg) - 1);
+                sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
+                utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
+                write(utente_fd, &desconhecido, sizeof(desconhecido));
+                close(utente_fd);
+                // separar a mensagem do classificador
+                char *ptr = strtok(desconhecido.especialidade, delim);
+                // guardar a especialidade no utente
+                strcpy(desconhecido.especialidade, ptr);
+                ptr = strtok(NULL, delim);
+                // guardar a prioridade do utente
+                desconhecido.prioridade = atoi(ptr);
+                adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
+                atribuiConsulta(&balcao);
             }
-
-            if (FD_ISSET(sinal_fd, &read_fds))
+            else if (desconhecido.tipoPessoa == 2)
             {
-                read(sinal_fd, &desconhecido, sizeof(desconhecido));
-                printf("\nRECEBI! PID - %d\n", desconhecido.pid);
-                resetTempo(&balcao, desconhecido.pid);
-            }
-
-            if (FD_ISSET(balcao_fd, &read_fds))
-            {
-                read(balcao_fd, &desconhecido, sizeof(desconhecido));
-                if (desconhecido.tipoPessoa == 1)
-                {
-                    write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
-                    read(canalReceber[0], desconhecido.especialidade, sizeof(desconhecido.msg) - 1);
-                    sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
-                    utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-                    write(utente_fd, &desconhecido, sizeof(desconhecido));
-                    close(utente_fd);
-                    // separar a mensagem do classificador
-                    char *ptr = strtok(desconhecido.especialidade, delim);
-                    // guardar a especialidade no utente
-                    strcpy(desconhecido.especialidade, ptr);
-                    ptr = strtok(NULL, delim);
-                    // guardar a prioridade do utente
-                    desconhecido.prioridade = atoi(ptr);
-                    adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
-                    atribuiConsulta(&balcao);
-                }
-                else if (desconhecido.tipoPessoa == 2)
-                {
-                    adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXMEDICOS")));
-                    atribuiConsulta(&balcao);
-                }
+                adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXMEDICOS")));
+                atribuiConsulta(&balcao);
             }
         }
     }

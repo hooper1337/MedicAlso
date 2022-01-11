@@ -14,10 +14,10 @@ void trataSig(int i)
 void *enviarSinal(void *dados)
 {
     Pessoa *pdados = (Pessoa *)dados;
+    int pid = pdados->pid;
     while (1)
     {
         sleep(20);
-        
         sinal_fd = open(SINAL_FIFO, O_RDWR | O_NONBLOCK);
         
         if (sinal_fd == -1)
@@ -27,7 +27,7 @@ void *enviarSinal(void *dados)
             exit(EXIT_FAILURE);
         }
 
-        write(sinal_fd, &pdados, sizeof(pdados));
+        write(sinal_fd, &pid, sizeof(pid));
         printf("\nEnviei\n");
         close(sinal_fd);
     }
