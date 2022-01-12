@@ -2,15 +2,6 @@
 
 int balcao_fd, utente_fd, especialista_fd;
 
-void trataSig(int i)
-{
-    (void)i;
-    fprintf(stderr, "\nServidor do Utente a terminar! Interrompido via teclado\n\n");
-    close(utente_fd);
-    unlink(UTENTE_FIFO_FINAL);
-    exit(EXIT_SUCCESS);
-}
-
 int main(int argc, char **argv)
 {
     Pessoa utente;
@@ -26,13 +17,6 @@ int main(int argc, char **argv)
     int recebi = 0;
 
     strcpy(utente.pNome, argv[1]);
-    strcpy(utente.uNome, argv[2]);
-
-    if (signal(SIGINT, trataSig) == SIG_ERR)
-    {
-        perror("\nNão foi possivel configurar o sinal SIGINT\n");
-        exit(EXIT_FAILURE);
-    }
 
     sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, utente.pid);
     if (mkfifo(UTENTE_FIFO_FINAL, 0777) == -1)
@@ -71,7 +55,7 @@ int main(int argc, char **argv)
             printf("\nEstou à escuta!\n");
         if (nfd == -1)
         {
-            printf("\nJá não recebo mais nada!\n");
+            printf("\nNão tenho nada para receber/ler!\n");
         }
         if (FD_ISSET(0, &read_fds))
         {

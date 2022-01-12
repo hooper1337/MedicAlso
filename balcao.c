@@ -1,39 +1,29 @@
 #include "balcao.h"
 
-int balcao_fd, sinal_fd, utente_fd, especialista_fd, numConsulta = 0;
+int balcao_fd, sinal_fd, utente_fd, especialista_fd, numConsulta = 0, listasDeEspera[5]={5,5,5,5,5};;
 
-void trataSig(int i)
-{
-    (void)i;
-    fprintf(stderr, "\nServidor do Balcão a terminar! Interrompido via teclado\n\n");
-    close(balcao_fd);
-    unlink(BALCAO_FIFO);
-    close(sinal_fd);
-    unlink(SINAL_FIFO);
-    exit(EXIT_SUCCESS);
-}
 
 int max(int a, int b)
 {
     return (a > b) ? a : b;
 }
 
-void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int maxMedicos, int maxUtentes)
+void adicionaNovaPessoa(Balcao *aux, Pessoa pessoa, int maxMedicos, int maxUtentes)
 {
     if (pessoa.tipoPessoa == 1)
     {
         for (int i = 0; i < maxUtentes; i++)
         {
-            if (aux.utentes[i].pid == pessoa.pid)
+            if (aux->utentes[i].pid == pessoa.pid)
             {
                 break;
             }
             else
             {
-                if (aux.utentes[i].pid == 0)
+                if (aux->utentes[i].pid == 0)
                 {
-                    aux.utentes[i] = pessoa;
-                    aux.numUtentes++;
+                    aux->utentes[i] = pessoa;
+                    aux->numUtentes++;
                     break;
                 }
             }
@@ -43,17 +33,17 @@ void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int maxMedicos, int maxUtente
     {
         for (int i = 0; i < maxMedicos; i++)
         {
-            if (aux.especialistas[i].pid == pessoa.pid)
+            if (aux->especialistas[i].pid == pessoa.pid)
             {
-                aux.especialistas[i].estado = 0;
+                aux->especialistas[i].estado = 0;
                 break;
             }
             else
             {
-                if (aux.especialistas[i].pid == 0)
+                if (aux->especialistas[i].pid == 0)
                 {
-                    aux.especialistas[i] = pessoa;
-                    aux.numMedicos++;
+                    aux->especialistas[i] = pessoa;
+                    aux->numMedicos++;
                     break;
                 }
             }
@@ -64,7 +54,6 @@ void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int maxMedicos, int maxUtente
 void reset(Pessoa *aux)
 {
     strcpy(aux->pNome, "\0");
-    strcpy(aux->uNome, "\0");
     aux->pid = 0;
     aux->estado = 0; // 0 para nao, 1 para sim
     strcpy(aux->msg, "\0");
@@ -99,24 +88,6 @@ void removerPessoa(Balcao *aux, int pid, int tipoPessoa, int maxMedicos, int max
     }
 }
 
-void *mostraListas(void *dados)
-{
-    Balcao *pdados = (Balcao *)dados;
-    int maxMedicos = atoi(getenv("MAXMEDICOS"));
-    int maxUtentes = atoi(getenv("MAXMEDICOS"));
-    while (1)
-    {
-        sleep(5);
-        for (int i = 0; i < maxUtentes; i++)
-            printf("\nUtente [%d] - PID - [%d]", i, pdados->utentes[i].pid);
-
-        printf("\n");
-        for (int i = 0; i < maxMedicos; i++)
-            printf("\nEspecialista [%d] - PID - [%d] - Tempo - [%d]", i, pdados->especialistas[i].pid, pdados->especialistas[i].tempo);
-        printf("\n");
-    }
-}
-
 void resetTempo(Balcao *aux, int pid, int maxMedicos)
 {
     for (int i = 0; i < maxMedicos; i++)
@@ -136,7 +107,7 @@ void *aumentarTempo(void *dados)
     while (1)
     {
         sleep(1);
-        for (int i = 0; i < maxMedicos; i++)  
+        for (int i = 0; i < maxMedicos; i++)
         {
             if (pdados->especialistas[i].pid != 0)
             {
@@ -146,9 +117,9 @@ void *aumentarTempo(void *dados)
                     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, pdados->especialistas[i].pid);
                     unlink(ESPECIALISTA_FIFO_FINAL);
                     removerPessoa(pdados, pdados->especialistas[i].pid, pdados->especialistas[i].tipoPessoa, maxMedicos, maxUtentes);
-                    for(int x=0; x<maxUtentes;x++)
+                    for (int x = 0; x < maxUtentes; x++)
                     {
-                        if(pdados->especialistas[i].numConsulta == pdados->utentes[x].numConsulta)
+                        if (pdados->especialistas[i].numConsulta == pdados->utentes[x].numConsulta)
                         {
                             removerPessoa(pdados, pdados->utentes[x].pid, pdados->utentes[x].tipoPessoa, maxMedicos, maxUtentes);
                             break;
@@ -230,6 +201,119 @@ void atribuiConsulta(Balcao *aux, int maxMedicos, int maxUtentes)
     }
 }
 
+void comUtentes(Balcao *aux, int maxMedicos, int maxUtentes)
+{
+    for (int i = 0; i < maxUtentes; i++)
+    {
+        if (aux->utentes[i].estado == 0)
+        {
+            if (aux->utentes[i].pid != 0)
+                printf("\nNome: %s - %s %d - %d\n", aux->utentes[i].pNome, aux->utentes[i].especialidade, aux->utentes[i].prioridade, aux->utentes[i].pid);
+        }
+        else
+        {
+            for (int j = 0; j < maxMedicos; j++)
+            {
+                if (aux->utentes[i].numConsulta == aux->especialistas[j].numConsulta)
+                {
+                    printf("\nNome: %s - %s %d - %d a ser atendido por %s - %d\n", aux->utentes[i].pNome, aux->utentes[i].especialidade, aux->utentes[i].prioridade, aux->utentes[i].pid, aux->especialistas[j].pNome, aux->especialistas[j].pid);
+                }
+            }
+        }
+    }
+}
+
+void comEspecialistas(Balcao *aux, int maxMedicos, int maxUtentes)
+{
+    for (int i = 0; i < maxMedicos; i++)
+    {
+        if (aux->especialistas[i].estado == 0)
+        {
+            if (aux->especialistas[i].pid != 0)
+                printf("\nNome: %s - %s - %d\n", aux->especialistas[i].pNome, aux->especialistas[i].especialidade, aux->especialistas[i].pid);
+        }
+        else
+        {
+            for (int j = 0; j < maxUtentes; j++)
+            {
+                if (aux->utentes[i].numConsulta == aux->especialistas[j].numConsulta)
+                {
+                    printf("\nNome: %s - %s - %d a atender %s - %d\n", aux->especialistas[i].pNome, aux->especialistas[i].especialidade, aux->especialistas[i].pid, aux->utentes[j].pNome, aux->utentes[j].pid);
+                }
+            }
+        }
+    }
+}
+
+bool delUtX(Balcao* aux,char *nome, int maxMedicos,  int maxUtentes)
+{
+    for(int i=0; i<maxUtentes; i++)
+    {
+        if(strcmp(aux->utentes[i].pNome, nome) == 0 && aux->utentes[i].estado == 0)
+        {
+            kill(aux->utentes[i].pid, SIGTERM);
+            removerPessoa(aux, aux->utentes[i].pid, aux->utentes[i].tipoPessoa, maxMedicos, maxUtentes);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool delEspX(Balcao* aux,char *nome, int maxMedicos,  int maxUtentes)
+{
+    for(int i=0; i<maxMedicos; i++)
+    {
+        if(strcmp(aux->especialistas[i].pNome, nome) == 0 && aux->especialistas[i].estado == 0)
+        {
+            kill(aux->especialistas[i].pid, SIGTERM);
+            removerPessoa(aux, aux->especialistas[i].pid, aux->especialistas[i].tipoPessoa, maxMedicos, maxUtentes);
+            return true;
+        }
+    }
+    return false;
+}
+
+void *listaListas(void* dados)
+{
+    Balcao *pdados = (Balcao *)dados;
+
+    while (1)
+    {
+        sleep(pdados->freq);
+        printf("\nGeral - %d", listasDeEspera[0]);
+        printf("\nEstomatologia - %d", listasDeEspera[1]);
+        printf("\nOrtopedia - %d", listasDeEspera[2]);
+        printf("\nOftalmologia - %d", listasDeEspera[3]);
+        printf("\nNeurologia - %d\n", listasDeEspera[4]);
+    }
+}
+
+void encerrar(Balcao *aux, int maxMedicos, int maxClientes)
+{
+    for(int i=0; i < maxClientes; i++)
+    {
+        if(aux->utentes[i].pid != 0)
+        {
+            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, aux->utentes[i].pid);
+            unlink(UTENTE_FIFO_FINAL);
+            kill(aux->utentes[i].pid, SIGTERM);
+        }
+    }
+
+    for(int j=0; j < maxMedicos; j++)
+    {
+        if(aux->especialistas[j].pid != 0)
+        { 
+            sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, aux->especialistas[j].pid);
+            unlink(ESPECIALISTA_FIFO_FINAL);
+            kill(aux->especialistas[j].pid, SIGTERM);
+        }
+    }
+    unlink(BALCAO_FIFO);
+    unlink(SINAL_FIFO);
+    kill(getpid(), SIGTERM);
+}
+
 void main()
 {
     // variáveis de ambiente
@@ -250,14 +334,16 @@ void main()
     maxMedicos = atoi(getenv("MAXMEDICOS"));
     maxUtentes = atoi(getenv("MAXMEDICOS"));
     Balcao balcao;
+    balcao.freq = 10;
     balcao.utentes = malloc(maxUtentes * sizeof(*balcao.utentes));
     balcao.especialistas = malloc(maxMedicos * sizeof(*balcao.especialistas));
     Pessoa desconhecido;
     char delim[] = " ";
+    char comando[TAM_MAX];
     int nfd;
     fd_set read_fds;
     struct timeval tv;
-    pthread_t mostraArrays;
+    pthread_t mostralistasEspera;
     pthread_t aumentar;
 
     // cria pipe para envio de dados
@@ -284,12 +370,6 @@ void main()
         exit(-1);
     }
 
-    // inicializaArray(utentes, atoi(getenv("MAXCLIENTES")));
-    if (signal(SIGINT, trataSig) == SIG_ERR)
-    {
-        perror("\nNão foi possivel configurar o sinal SIGINT\n");
-        exit(EXIT_FAILURE);
-    }
 
     if (mkfifo(BALCAO_FIFO, 0777) == -1)
     {
@@ -319,15 +399,15 @@ void main()
     }
     printf("\nSINAIS DO BALCÃO CONFIGURADO!\n");
 
-    pthread_create(&mostraArrays, NULL, &mostraListas, &balcao);
     pthread_create(&aumentar, NULL, &aumentarTempo, &balcao);
+    pthread_create(&mostralistasEspera, NULL, &listaListas, &balcao);
 
     close(canalEnvio[0]);
     close(canalReceber[1]);
-    
+
     while (1)
     {
-        tv.tv_sec = 5;
+        tv.tv_sec = 25;
         tv.tv_usec = 0;
 
         FD_ZERO(&read_fds);
@@ -347,6 +427,50 @@ void main()
 
         if (FD_ISSET(0, &read_fds))
         {
+            fgets(comando, sizeof(comando), stdin);
+            if (strcmp(comando, "utentes\n") == 0)
+                comUtentes(&balcao, maxMedicos, maxUtentes);
+            else if (strcmp(comando, "especialistas\n") == 0)
+                comEspecialistas(&balcao, maxMedicos, maxUtentes);
+            else if (comando[0] == 'd' && comando[1] == 'e' && comando[2] == 'l' && comando[3] == 'u' && comando[4] == 't')
+            {
+                char *ptr1 = strtok(comando, delim);
+                ptr1 = strtok(NULL, delim);
+                ptr1[strlen(ptr1)-1] = '\0';
+                if(delUtX(&balcao, ptr1, maxMedicos, maxUtentes))
+                {
+                    printf("\nUtente %s removido com sucesso!\n", ptr1);
+                }
+                else
+                    printf("\nO utente não existe ou está numa consulta!\n");
+            }
+            else if (comando[0] == 'd' && comando[1] == 'e' && comando[2] == 'l' && comando[3] == 'e' && comando[4] == 's' && comando[5] == 'p')
+            {
+                char *ptr1 = strtok(comando, delim);
+                ptr1 = strtok(NULL, delim);
+                ptr1[strlen(ptr1)-1] = '\0';
+                if(delEspX(&balcao, ptr1, maxMedicos, maxUtentes))
+                {
+                    printf("\nMédico %s removido com sucesso!\n", ptr1);
+                }
+                else
+                    printf("\nO médico não existe ou está numa consulta!\n");
+            }
+            else if(comando[0] == 'f' && comando[1] == 'r' && comando[2] == 'e' && comando[3] == 'q')
+            {
+                char *ptr2 = strtok(comando, delim);
+                ptr2 = strtok(NULL, delim);
+                balcao.freq = atoi(ptr2);
+                printf("\nFrequência alterada para %d segundos!\n", balcao.freq);
+            }
+            else if(strcmp(comando, "encerrar\n")==0)
+            {
+                encerrar(&balcao, maxMedicos, maxUtentes);
+            }
+            else
+            {
+                printf("\nComando não reconhecido!\n");
+            }
         }
 
         if (FD_ISSET(sinal_fd, &read_fds))
@@ -364,42 +488,42 @@ void main()
             read(balcao_fd, &desconhecido, sizeof(desconhecido));
             if (desconhecido.tipoPessoa == 1)
             {
-                if(balcao.numUtentes == maxUtentes)
+                if (balcao.numUtentes == maxUtentes)
                 {
                     kill(desconhecido.pid, SIGTERM);
                     printf("\nNão posso trabalhar com mais utentes!\n");
                 }
-                else if(desconhecido.estado == 1)
+                else if (desconhecido.estado == 1)
                 {
                     removerPessoa(&balcao, desconhecido.pid, desconhecido.tipoPessoa, maxMedicos, maxUtentes);
                 }
                 else
                 {
-                write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
-                read(canalReceber[0], desconhecido.especialidade, sizeof(desconhecido.msg) - 1);
-                sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
-                utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-                write(utente_fd, &desconhecido, sizeof(desconhecido));
-                close(utente_fd);
-                // separar a mensagem do classificador
-                char *ptr = strtok(desconhecido.especialidade, delim);
-                // guardar a especialidade no utente
-                strcpy(desconhecido.especialidade, ptr);
-                ptr = strtok(NULL, delim);
-                // guardar a prioridade do utente
-                desconhecido.prioridade = atoi(ptr);
-                adicionaNovaPessoa(balcao, desconhecido, maxMedicos, maxUtentes);
-                atribuiConsulta(&balcao, maxMedicos, maxUtentes);
+                    write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
+                    read(canalReceber[0], desconhecido.especialidade, sizeof(desconhecido.msg) - 1);
+                    sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
+                    utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
+                    write(utente_fd, &desconhecido, sizeof(desconhecido));
+                    close(utente_fd);
+                    // separar a mensagem do classificador
+                    char *ptr = strtok(desconhecido.especialidade, delim);
+                    // guardar a especialidade no utente
+                    strcpy(desconhecido.especialidade, ptr);
+                    ptr = strtok(NULL, delim);
+                    // guardar a prioridade do utente
+                    desconhecido.prioridade = atoi(ptr);
+                    adicionaNovaPessoa(&balcao, desconhecido, maxMedicos, maxUtentes);
+                    atribuiConsulta(&balcao, maxMedicos, maxUtentes);
                 }
             }
             else if (desconhecido.tipoPessoa == 2)
             {
-                if(balcao.numMedicos == maxMedicos)
+                if (balcao.numMedicos == maxMedicos)
                 {
                     kill(desconhecido.pid, SIGTERM);
                     printf("\nNão posso trabalhar com mais médicos!\n");
                 }
-                adicionaNovaPessoa(balcao, desconhecido, maxMedicos, maxUtentes);
+                adicionaNovaPessoa(&balcao, desconhecido, maxMedicos, maxUtentes);
                 atribuiConsulta(&balcao, maxMedicos, maxUtentes);
             }
         }

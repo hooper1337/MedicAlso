@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 
 #define TAM_MAX 256
 #define BALCAO_FIFO "balcao_fifo"
@@ -25,7 +26,6 @@ char ESPECIALISTA_FIFO_FINAL[TAM_MAX];
 struct pessoa
 {
     char pNome[TAM_MAX];
-    char uNome[TAM_MAX];
     pid_t pid;
     int estado; // 0 para nao, 1 para sim
     char msg[TAM_MAX];
@@ -40,8 +40,14 @@ struct pessoa
 // struct para o balcao comunicar com os clientes
 struct balcao
 {
+    int freq;
     int numUtentes;
     int numMedicos;
+    int geral;
+    int estomatologia;
+    int ortopedia;
+    int oftalmologia;
+    int neurologia;
     Pessoa *utentes;
     Pessoa *especialistas;
 } typedef Balcao;

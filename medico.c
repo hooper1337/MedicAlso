@@ -36,8 +36,7 @@ int main(int argc, char **argv)
     pthread_t sinal;
 
     strcpy(especialista.pNome, argv[1]);
-    strcpy(especialista.uNome, argv[2]);
-    strcpy(especialista.especialidade, argv[3]);
+    strcpy(especialista.especialidade, argv[2]);
 
     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, especialista.pid);
     if (mkfifo(ESPECIALISTA_FIFO_FINAL, 0777) == -1)
@@ -103,6 +102,8 @@ int main(int argc, char **argv)
                 {
                     close(especialista_fd);
                     unlink(ESPECIALISTA_FIFO_FINAL);
+                    sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, utente.pid);
+                    unlink(UTENTE_FIFO_FINAL);
                     kill(utente.pid, SIGTERM);
                     kill(especialista.pid, SIGTERM);
                 }
@@ -134,6 +135,8 @@ int main(int argc, char **argv)
                 if(strcmp(utente.msg, "adeus\n")==0)
                 {
                     close(utente_fd);
+                    sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, utente.pid);
+                    unlink(UTENTE_FIFO_FINAL);
                     kill(utente.pid, SIGTERM);
                     especialista.estado = 0;
                     write(balcao_fd, &especialista, sizeof(especialista));
