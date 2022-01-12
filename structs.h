@@ -45,4 +45,4 @@ struct balcao
 } typedef Balcao;
 
 void reset(Pessoa *aux);
-void removerPessoa(Balcao *aux, int pid, int tipoPessoa);
+void removerPessoa(Balcao *aux, int pid, int tipoPessoa, int maxMedicos, int maxUtentes);

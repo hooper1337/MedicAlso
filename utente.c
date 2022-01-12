@@ -68,10 +68,10 @@ int main(int argc, char **argv)
 
         nfd = select(utente_fd + 1, &read_fds, NULL, NULL, &tv);
         if (nfd == 0)
-            printf("\nEstou a espera do médico!\n");
+            printf("\nEstou à escuta!\n");
         if (nfd == -1)
         {
-            printf("\nErro no select!\n");
+            printf("\nJá não recebo mais nada!\n");
         }
         if (FD_ISSET(0, &read_fds))
         {
@@ -85,11 +85,11 @@ int main(int argc, char **argv)
                 if(strcmp(utente.msg, "adeus\n")==0)
                 {
                     write(balcao_fd, &utente, sizeof(utente));
-                    unlink(UTENTE_FIFO_FINAL);
-                    close(balcao_fd);
-                    close(utente_fd);
                     write(especialista_fd, &utente, sizeof(utente));
                     close(especialista_fd);
+                    close(balcao_fd);
+                    close(utente_fd);
+                    unlink(UTENTE_FIFO_FINAL);
                 }
                 else
                 {

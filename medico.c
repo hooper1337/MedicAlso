@@ -99,7 +99,6 @@ int main(int argc, char **argv)
             }
             else
             {
-                write(utente_fd, &especialista, sizeof(especialista));
                 if(strcmp(especialista.msg, "sair\n")== 0)
                 {
                     close(especialista_fd);
@@ -107,11 +106,13 @@ int main(int argc, char **argv)
                     kill(utente.pid, SIGTERM);
                     kill(especialista.pid, SIGTERM);
                 }
+    
                 else if(strcmp(especialista.msg, "adeus\n")==0)
                 {
                     especialista.estado = 0;
                     write(balcao_fd, &especialista, sizeof(especialista));
                 }
+                write(utente_fd, &especialista, sizeof(especialista));
             }
         }
 

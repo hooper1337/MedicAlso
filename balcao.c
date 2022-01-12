@@ -18,11 +18,11 @@ int max(int a, int b)
     return (a > b) ? a : b;
 }
 
-void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int total)
+void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int maxMedicos, int maxUtentes)
 {
     if (pessoa.tipoPessoa == 1)
     {
-        for (int i = 0; i < total; i++)
+        for (int i = 0; i < maxUtentes; i++)
         {
             if (aux.utentes[i].pid == pessoa.pid)
             {
@@ -40,7 +40,7 @@ void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int total)
     }
     else
     {
-        for (int i = 0; i < total; i++)
+        for (int i = 0; i < maxMedicos; i++)
         {
             if (aux.especialistas[i].pid == pessoa.pid)
             {
@@ -73,11 +73,11 @@ void reset(Pessoa *aux)
     aux->tempo = 0;
 }
 
-void removerPessoa(Balcao *aux, int pid, int tipoPessoa)
+void removerPessoa(Balcao *aux, int pid, int tipoPessoa, int maxMedicos, int maxUtentes)
 {
     if (tipoPessoa == 1)
     {
-        for (int i = 0; i < sizeof(aux->utentes); i++)
+        for (int i = 0; i < maxUtentes; i++)
         {
             if (aux->utentes[i].pid == pid)
             {
@@ -87,7 +87,7 @@ void removerPessoa(Balcao *aux, int pid, int tipoPessoa)
     }
     else if (tipoPessoa == 2)
     {
-        for (int i = 0; i < sizeof(aux->especialistas); i++)
+        for (int i = 0; i < maxMedicos; i++)
         {
             if (aux->especialistas[i].pid == pid)
             {
@@ -100,22 +100,24 @@ void removerPessoa(Balcao *aux, int pid, int tipoPessoa)
 void *mostraListas(void *dados)
 {
     Balcao *pdados = (Balcao *)dados;
+    int maxMedicos = atoi(getenv("MAXMEDICOS"));
+    int maxUtentes = atoi(getenv("MAXMEDICOS"));
     while (1)
     {
         sleep(5);
-        for (int i = 0; i < sizeof(pdados->utentes); i++)
+        for (int i = 0; i < maxUtentes; i++)
             printf("\nUtente [%d] - PID - [%d]", i, pdados->utentes[i].pid);
 
         printf("\n");
-        for (int i = 0; i < sizeof(pdados->especialistas); i++)
+        for (int i = 0; i < maxMedicos; i++)
             printf("\nEspecialista [%d] - PID - [%d] - Tempo - [%d]", i, pdados->especialistas[i].pid, pdados->especialistas[i].tempo);
         printf("\n");
     }
 }
 
-void resetTempo(Balcao *aux, int pid)
+void resetTempo(Balcao *aux, int pid, int maxMedicos)
 {
-    for (int i = 0; i < sizeof(aux->especialistas); i++)
+    for (int i = 0; i < maxMedicos; i++)
     {
         if (aux->especialistas[i].pid == pid)
         {
@@ -127,10 +129,12 @@ void resetTempo(Balcao *aux, int pid)
 void *aumentarTempo(void *dados)
 {
     Balcao *pdados = (Balcao *)dados;
+    int maxMedicos = atoi(getenv("MAXMEDICOS"));
+    int maxUtentes = atoi(getenv("MAXMEDICOS"));
     while (1)
     {
         sleep(1);
-        for (int i = 0; i < sizeof(pdados->especialistas); i++)
+        for (int i = 0; i < maxMedicos; i++)  
         {
             if (pdados->especialistas[i].pid != 0)
             {
@@ -139,12 +143,12 @@ void *aumentarTempo(void *dados)
                 {
                     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, pdados->especialistas[i].pid);
                     unlink(ESPECIALISTA_FIFO_FINAL);
-                    removerPessoa(pdados, pdados->especialistas[i].pid, pdados->especialistas[i].tipoPessoa);
-                    for(int x=0; x<sizeof(pdados->utentes);x++)
+                    removerPessoa(pdados, pdados->especialistas[i].pid, pdados->especialistas[i].tipoPessoa, maxMedicos, maxUtentes);
+                    for(int x=0; x<maxUtentes;x++)
                     {
                         if(pdados->especialistas[i].numConsulta == pdados->utentes[x].numConsulta)
                         {
-                            removerPessoa(pdados, pdados->utentes[x].pid, pdados->utentes[x].tipoPessoa);
+                            removerPessoa(pdados, pdados->utentes[x].pid, pdados->utentes[x].tipoPessoa, maxMedicos, maxUtentes);
                             break;
                         }
                     }
@@ -154,18 +158,18 @@ void *aumentarTempo(void *dados)
     }
 }
 
-void atribuiConsulta(Balcao *aux)
+void atribuiConsulta(Balcao *aux, int maxMedicos, int maxUtentes)
 {
     int recebeMaior;
-    for (int i = 0; i < sizeof(aux->especialistas); i++)
+    for (int i = 0; i < maxMedicos; i++)
     {
         if (aux->especialistas[i].pid != 0 && aux->especialistas[i].estado == 0)
         {
-            for (int j = 0; j < sizeof(aux->utentes); j++)
+            for (int j = 0; j < maxUtentes; j++)
             {
                 if (aux->utentes[j].pid != 0 && aux->utentes[j].estado == 0 && strcmp(aux->especialistas[i].especialidade, aux->utentes[j].especialidade) == 0)
                 {
-                    for (int i = 0; i < sizeof(aux->utentes); i++)
+                    for (int i = 0; i < maxUtentes; i++)
                     {
                         if (strcmp(aux->utentes[i].especialidade, aux->utentes[j].especialidade) == 0)
                         {
@@ -187,7 +191,7 @@ void atribuiConsulta(Balcao *aux)
                             continue;
                         }
                     }
-                    for (int i = 0; i < sizeof(aux->utentes); i++)
+                    for (int i = 0; i < maxUtentes; i++)
                     {
                         if (strcmp(aux->utentes[i].especialidade, aux->utentes[j].especialidade) == 0)
                         {
@@ -240,10 +244,12 @@ void main()
 
     // definição de variáveis
     int canalEnvio[2], canalReceber[2];
-    char str[40];
+    int maxMedicos, maxUtentes;
+    maxMedicos = atoi(getenv("MAXMEDICOS"));
+    maxUtentes = atoi(getenv("MAXMEDICOS"));
     Balcao balcao;
-    balcao.utentes = malloc(atoi(getenv("MAXCLIENTES")) * sizeof(*balcao.utentes));
-    balcao.especialistas = malloc(atoi(getenv("MAXMEDICOS")) * sizeof(*balcao.especialistas));
+    balcao.utentes = malloc(maxUtentes * sizeof(*balcao.utentes));
+    balcao.especialistas = malloc(maxMedicos * sizeof(*balcao.especialistas));
     Pessoa desconhecido;
     char delim[] = " ";
     int nfd;
@@ -347,7 +353,7 @@ void main()
             int size = read(sinal_fd, &pid, sizeof(pid));
             if (size == sizeof(pid))
             {
-                resetTempo(&balcao, pid);
+                resetTempo(&balcao, pid, maxMedicos);
             }
         }
 
@@ -358,7 +364,7 @@ void main()
             {
                 if(desconhecido.estado == 1)
                 {
-                    removerPessoa(&balcao, desconhecido.pid, desconhecido.tipoPessoa);
+                    removerPessoa(&balcao, desconhecido.pid, desconhecido.tipoPessoa, maxMedicos, maxUtentes);
                 }
                 else
                 {
@@ -375,14 +381,14 @@ void main()
                 ptr = strtok(NULL, delim);
                 // guardar a prioridade do utente
                 desconhecido.prioridade = atoi(ptr);
-                adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
-                atribuiConsulta(&balcao);
+                adicionaNovaPessoa(balcao, desconhecido, maxMedicos, maxUtentes);
+                atribuiConsulta(&balcao, maxMedicos, maxUtentes);
                 }
             }
             else if (desconhecido.tipoPessoa == 2)
             {
-                adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXMEDICOS")));
-                atribuiConsulta(&balcao);
+                adicionaNovaPessoa(balcao, desconhecido, maxMedicos, maxUtentes);
+                atribuiConsulta(&balcao, maxMedicos, maxUtentes);
             }
         }
     }
