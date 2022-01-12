@@ -33,6 +33,7 @@ void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int maxMedicos, int maxUtente
                 if (aux.utentes[i].pid == 0)
                 {
                     aux.utentes[i] = pessoa;
+                    aux.numUtentes++;
                     break;
                 }
             }
@@ -52,6 +53,7 @@ void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int maxMedicos, int maxUtente
                 if (aux.especialistas[i].pid == 0)
                 {
                     aux.especialistas[i] = pessoa;
+                    aux.numMedicos++;
                     break;
                 }
             }
@@ -362,7 +364,12 @@ void main()
             read(balcao_fd, &desconhecido, sizeof(desconhecido));
             if (desconhecido.tipoPessoa == 1)
             {
-                if(desconhecido.estado == 1)
+                if(balcao.numUtentes == maxUtentes)
+                {
+                    kill(desconhecido.pid, SIGTERM);
+                    printf("\nNão posso trabalhar com mais utentes!\n");
+                }
+                else if(desconhecido.estado == 1)
                 {
                     removerPessoa(&balcao, desconhecido.pid, desconhecido.tipoPessoa, maxMedicos, maxUtentes);
                 }
@@ -387,6 +394,11 @@ void main()
             }
             else if (desconhecido.tipoPessoa == 2)
             {
+                if(balcao.numMedicos == maxMedicos)
+                {
+                    kill(desconhecido.pid, SIGTERM);
+                    printf("\nNão posso trabalhar com mais médicos!\n");
+                }
                 adicionaNovaPessoa(balcao, desconhecido, maxMedicos, maxUtentes);
                 atribuiConsulta(&balcao, maxMedicos, maxUtentes);
             }

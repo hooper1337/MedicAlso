@@ -40,6 +40,8 @@ struct pessoa
 // struct para o balcao comunicar com os clientes
 struct balcao
 {
+    int numUtentes;
+    int numMedicos;
     Pessoa *utentes;
     Pessoa *especialistas;
 } typedef Balcao;
