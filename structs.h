@@ -43,3 +43,6 @@ struct balcao
     Pessoa *utentes;
     Pessoa *especialistas;
 } typedef Balcao;
+
+void reset(Pessoa *aux);
+void removerPessoa(Balcao *aux, int pid, int tipoPessoa);

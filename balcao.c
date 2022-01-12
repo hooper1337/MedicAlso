@@ -44,6 +44,7 @@ void adicionaNovaPessoa(Balcao aux, Pessoa pessoa, int total)
         {
             if (aux.especialistas[i].pid == pessoa.pid)
             {
+                aux.especialistas[i].estado = 0;
                 break;
             }
             else
@@ -139,6 +140,14 @@ void *aumentarTempo(void *dados)
                     sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, pdados->especialistas[i].pid);
                     unlink(ESPECIALISTA_FIFO_FINAL);
                     removerPessoa(pdados, pdados->especialistas[i].pid, pdados->especialistas[i].tipoPessoa);
+                    for(int x=0; x<sizeof(pdados->utentes);x++)
+                    {
+                        if(pdados->especialistas[i].numConsulta == pdados->utentes[x].numConsulta)
+                        {
+                            removerPessoa(pdados, pdados->utentes[x].pid, pdados->utentes[x].tipoPessoa);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -204,7 +213,7 @@ void atribuiConsulta(Balcao *aux)
                     aux->especialistas[i].estado = 1;
                     aux->utentes[j].estado = 1;
                     aux->especialistas[i].numConsulta = numConsulta;
-                    aux->especialistas[j].numConsulta = numConsulta;
+                    aux->utentes[j].numConsulta = numConsulta;
 
                     close(utente_fd);
                     close(especialista_fd);
@@ -338,7 +347,6 @@ void main()
             int size = read(sinal_fd, &pid, sizeof(pid));
             if (size == sizeof(pid))
             {
-                printf("\nRECEBI! PID - %d\n", pid);
                 resetTempo(&balcao, pid);
             }
         }
@@ -348,6 +356,12 @@ void main()
             read(balcao_fd, &desconhecido, sizeof(desconhecido));
             if (desconhecido.tipoPessoa == 1)
             {
+                if(desconhecido.estado == 1)
+                {
+                    removerPessoa(&balcao, desconhecido.pid, desconhecido.tipoPessoa);
+                }
+                else
+                {
                 write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
                 read(canalReceber[0], desconhecido.especialidade, sizeof(desconhecido.msg) - 1);
                 sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
@@ -363,6 +377,7 @@ void main()
                 desconhecido.prioridade = atoi(ptr);
                 adicionaNovaPessoa(balcao, desconhecido, atoi(getenv("MAXCLIENTES")));
                 atribuiConsulta(&balcao);
+                }
             }
             else if (desconhecido.tipoPessoa == 2)
             {

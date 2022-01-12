@@ -82,10 +82,22 @@ int main(int argc, char **argv)
             }
             else
             {
-                write(especialista_fd, &utente, sizeof(utente));
+                if(strcmp(utente.msg, "adeus\n")==0)
+                {
+                    write(balcao_fd, &utente, sizeof(utente));
+                    unlink(UTENTE_FIFO_FINAL);
+                    close(balcao_fd);
+                    close(utente_fd);
+                    write(especialista_fd, &utente, sizeof(utente));
+                    close(especialista_fd);
+                }
+                else
+                {
+                    write(especialista_fd, &utente, sizeof(utente));
+                }
+                
             }
         }
-
         if (FD_ISSET(utente_fd, &read_fds))
         {
             if (utente.estado == 0)
@@ -107,7 +119,6 @@ int main(int argc, char **argv)
                     }
                     else
                     {
-                        close(balcao_fd);
                         printf("\nFoi-me atribuido um médico com o PID: %d\n", especialista.pid);
                         printf("\nConversa com o médico!\n\n");
                         utente.estado = 1;
@@ -117,6 +128,15 @@ int main(int argc, char **argv)
             else
             {
                 read(utente_fd, &especialista, sizeof(especialista));
+                if(strcmp(especialista.msg, "adeus\n")==0)
+                {
+                    write(balcao_fd, &utente, sizeof(utente));
+                    unlink(UTENTE_FIFO_FINAL);
+                    close(balcao_fd);
+                    close(utente_fd);
+                    close(especialista_fd);
+                    kill(getpid(), SIGTERM);  
+                }
                 printf("\nMensagem do médico: %s\n", especialista.msg);
             }
         }

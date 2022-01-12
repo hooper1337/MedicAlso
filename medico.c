@@ -17,9 +17,7 @@ void *enviarSinal(void *dados)
             unlink(SINAL_FIFO);
             exit(EXIT_FAILURE);
         }
-
         write(sinal_fd, &pid, sizeof(pid));
-        printf("\nEnviei\n");
         close(sinal_fd);
     }
 }
@@ -109,6 +107,11 @@ int main(int argc, char **argv)
                     kill(utente.pid, SIGTERM);
                     kill(especialista.pid, SIGTERM);
                 }
+                else if(strcmp(especialista.msg, "adeus\n")==0)
+                {
+                    especialista.estado = 0;
+                    write(balcao_fd, &especialista, sizeof(especialista));
+                }
             }
         }
 
@@ -127,6 +130,13 @@ int main(int argc, char **argv)
             else
             {
                 read(especialista_fd, &utente, sizeof(utente));
+                if(strcmp(utente.msg, "adeus\n")==0)
+                {
+                    close(utente_fd);
+                    kill(utente.pid, SIGTERM);
+                    especialista.estado = 0;
+                    write(balcao_fd, &especialista, sizeof(especialista));
+                }
                 printf("Mensagem do utente: %s \n", utente.msg);
             }
         }
