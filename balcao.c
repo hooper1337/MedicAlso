@@ -22,9 +22,91 @@ void adicionaNovaPessoa(Balcao *aux, Pessoa pessoa, int maxMedicos, int maxUtent
             {
                 if (aux->utentes[i].pid == 0)
                 {
-                    aux->utentes[i] = pessoa;
-                    aux->numUtentes++;
-                    break;
+                    if(strcmp(pessoa.especialidade, "geral") == 0)
+                    {
+                        if(listasDeEspera[0] == 0)
+                        {
+                            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, pessoa.pid);
+                            unlink(UTENTE_FIFO_FINAL);
+                            kill(pessoa.pid, SIGTERM);
+                            printf("\nO hospital não tem capacidade para mais utentes com a especialidade do mesmo!\n");
+                            break;
+                        }
+                        else{
+                            listasDeEspera[0]--;
+                            aux->utentes[i] = pessoa;
+                            aux->numUtentes++;
+                            break;
+                        }
+                    }
+                    else if(strcmp(pessoa.especialidade, "estomatologia") == 0)
+                    {
+                        if(listasDeEspera[1] == 0)
+                        {
+                            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, pessoa.pid);
+                            unlink(UTENTE_FIFO_FINAL);
+                            kill(pessoa.pid, SIGTERM);
+                            printf("\nO hospital não tem capacidade para mais utentes com a especialidade do mesmo!\n");
+                            break;
+                        }
+                        else{
+                            listasDeEspera[1]--;
+                            aux->utentes[i] = pessoa;
+                            aux->numUtentes++;
+                            break;
+                        }
+                    }
+                    else if(strcmp(pessoa.especialidade, "ortopedia") == 0)
+                    {
+                        if(listasDeEspera[2] == 0)
+                        {
+                            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, pessoa.pid);
+                            unlink(UTENTE_FIFO_FINAL);
+                            kill(pessoa.pid, SIGTERM);
+                            printf("\nO hospital não tem capacidade para mais utentes com a especialidade do mesmo!\n");
+                            break;
+                        }
+                        else{
+                            listasDeEspera[2]--;
+                            aux->utentes[i] = pessoa;
+                            aux->numUtentes++;
+                            break;
+                        }
+                    }
+                    else if(strcmp(pessoa.especialidade, "oftalmologia") == 0)
+                    {
+                        if(listasDeEspera[3] == 0)
+                        {
+                            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, pessoa.pid);
+                            unlink(UTENTE_FIFO_FINAL);
+                            kill(pessoa.pid, SIGTERM);
+                            printf("\nO hospital não tem capacidade para mais utentes com a especialidade do mesmo!\n");
+                            break;
+                        }
+                        else{
+                            listasDeEspera[3]--;
+                            aux->utentes[i] = pessoa;
+                            aux->numUtentes++;
+                            break;
+                        }
+                    }
+                    else if(strcmp(pessoa.especialidade, "neurologia") == 0)
+                    {
+                        if(listasDeEspera[4] == 0)
+                        {
+                            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, pessoa.pid);
+                            unlink(UTENTE_FIFO_FINAL);
+                            kill(pessoa.pid, SIGTERM);
+                            printf("\nO hospital não tem capacidade para mais utentes com a especialidade do mesmo!\n");
+                            break;
+                        }
+                        else{
+                            listasDeEspera[4]--;
+                            aux->utentes[i] = pessoa;
+                            aux->numUtentes++;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -192,6 +274,30 @@ void atribuiConsulta(Balcao *aux, int maxMedicos, int maxUtentes)
                     aux->especialistas[i].numConsulta = numConsulta;
                     aux->utentes[j].numConsulta = numConsulta;
 
+                    if(strcmp(aux->especialistas[i].especialidade, "geral")==0)
+                    {
+                        listasDeEspera[0]++;
+                    }
+
+                    else if(strcmp(aux->especialistas[i].especialidade, "estomatologia")==0)
+                    {
+                        listasDeEspera[1]++;
+                    }
+
+                    else if(strcmp(aux->especialistas[i].especialidade, "ortopedia")==0)
+                    {
+                        listasDeEspera[2]++;
+                    }
+
+                    else if(strcmp(aux->especialistas[i].especialidade, "oftalmologia")==0)
+                    {
+                        listasDeEspera[3]++;
+                    }
+                    else if(strcmp(aux->especialistas[i].especialidade, "neurologia")==0)
+                    {
+                        listasDeEspera[4]++;
+                    }
+
                     close(utente_fd);
                     close(especialista_fd);
                     break;
@@ -252,7 +358,10 @@ bool delUtX(Balcao* aux,char *nome, int maxMedicos,  int maxUtentes)
         if(strcmp(aux->utentes[i].pNome, nome) == 0 && aux->utentes[i].estado == 0)
         {
             kill(aux->utentes[i].pid, SIGTERM);
+            sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, aux->utentes[i].pid);
+            unlink(UTENTE_FIFO_FINAL);
             removerPessoa(aux, aux->utentes[i].pid, aux->utentes[i].tipoPessoa, maxMedicos, maxUtentes);
+            printf("\nUtente %s eliminado!\n", aux->utentes[i].pNome);
             return true;
         }
     }
@@ -266,7 +375,10 @@ bool delEspX(Balcao* aux,char *nome, int maxMedicos,  int maxUtentes)
         if(strcmp(aux->especialistas[i].pNome, nome) == 0 && aux->especialistas[i].estado == 0)
         {
             kill(aux->especialistas[i].pid, SIGTERM);
+            sprintf(ESPECIALISTA_FIFO_FINAL, ESPECIALISTA_FIFO, aux->especialistas[i].pid);
+            unlink(ESPECIALISTA_FIFO_FINAL);
             removerPessoa(aux, aux->especialistas[i].pid, aux->especialistas[i].tipoPessoa, maxMedicos, maxUtentes);
+            printf("\nEspecialista %s eliminado!\n", aux->especialistas[i].pNome);
             return true;
         }
     }
@@ -280,6 +392,7 @@ void *listaListas(void* dados)
     while (1)
     {
         sleep(pdados->freq);
+        printf("\nLista de espera das especialidades\n\n");
         printf("\nGeral - %d", listasDeEspera[0]);
         printf("\nEstomatologia - %d", listasDeEspera[1]);
         printf("\nOrtopedia - %d", listasDeEspera[2]);
@@ -491,6 +604,8 @@ void main()
                 if (balcao.numUtentes == maxUtentes)
                 {
                     kill(desconhecido.pid, SIGTERM);
+                    sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
+                    unlink(UTENTE_FIFO_FINAL);
                     printf("\nNão posso trabalhar com mais utentes!\n");
                 }
                 else if (desconhecido.estado == 1)
@@ -499,11 +614,51 @@ void main()
                 }
                 else
                 {
+                    if(strcmp(desconhecido.msg, "sair\n")==0)
+                    {
+                        printf("\nO utente %s - %d foi-se embora!\n", desconhecido.pNome, desconhecido.pid);
+                        if(desconhecido.prioridade != 0)
+                        {
+                            removerPessoa(&balcao, desconhecido.pid, desconhecido.tipoPessoa, maxMedicos, maxUtentes);
+                        }
+                        sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
+                        unlink(UTENTE_FIFO_FINAL);
+                        kill(desconhecido.pid, SIGTERM);
+                        if(strcmp(desconhecido.especialidade, "geral")==0)
+                        {
+                            listasDeEspera[0]++;
+                            close(utente_fd);
+                        }
+
+                        else if(strcmp(desconhecido.especialidade, "estomatologia")==0)
+                        {
+                            listasDeEspera[1]++;
+                            close(utente_fd);
+                        }
+
+                        else if(strcmp(desconhecido.especialidade, "ortopedia")==0)
+                        {
+                            listasDeEspera[2]++;
+                            close(utente_fd);
+                        }
+
+                        else if(strcmp(desconhecido.especialidade, "oftalmologia")==0)
+                        {
+                            listasDeEspera[3]++;
+                            close(utente_fd);
+                        }
+                        else if(strcmp(desconhecido.especialidade, "neurologia")==0)
+                        {
+                            listasDeEspera[4]++;
+                            close(utente_fd);
+                        }
+                    }
+                    else{
                     write(canalEnvio[1], desconhecido.msg, strlen(desconhecido.msg));
                     read(canalReceber[0], desconhecido.especialidade, sizeof(desconhecido.msg) - 1);
                     sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
                     utente_fd = open(UTENTE_FIFO_FINAL, O_RDWR | O_NONBLOCK);
-                    write(utente_fd, &desconhecido, sizeof(desconhecido));
+                    write(utente_fd, &desconhecido.especialidade, sizeof(desconhecido.especialidade));
                     close(utente_fd);
                     // separar a mensagem do classificador
                     char *ptr = strtok(desconhecido.especialidade, delim);
@@ -514,6 +669,7 @@ void main()
                     desconhecido.prioridade = atoi(ptr);
                     adicionaNovaPessoa(&balcao, desconhecido, maxMedicos, maxUtentes);
                     atribuiConsulta(&balcao, maxMedicos, maxUtentes);
+                    }
                 }
             }
             else if (desconhecido.tipoPessoa == 2)

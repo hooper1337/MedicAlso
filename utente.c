@@ -11,6 +11,7 @@ int main(int argc, char **argv)
     Pessoa especialista;
     Pessoa desconhecido;
     int nfd;
+    char delim[] = " ";
     fd_set read_fds;
     struct timeval tv;
     bool primeiraVez = true;
@@ -88,8 +89,13 @@ int main(int argc, char **argv)
             {
                 if(recebi == 0)
                 {
-                    read(utente_fd, &utente, sizeof(utente));
-                    printf("\nEspecialidade e pioridade: %s", utente.especialidade);
+                    char aux[TAM_MAX];
+                    read(utente_fd, &aux, sizeof(aux));
+                    printf("\nEspecialidade e pioridade: %s", aux);
+                    char *ptr = strtok(aux, delim);
+                    strcpy(utente.especialidade, ptr);
+                    ptr = strtok(NULL, delim);
+                    utente.prioridade = atoi(ptr);
                     recebi = 1;
                 }
                 else
