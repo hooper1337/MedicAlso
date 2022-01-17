@@ -624,30 +624,30 @@ void main()
                         sprintf(UTENTE_FIFO_FINAL, UTENTE_FIFO, desconhecido.pid);
                         unlink(UTENTE_FIFO_FINAL);
                         kill(desconhecido.pid, SIGTERM);
-                        if(strcmp(desconhecido.especialidade, "geral")==0)
+                        if(strcmp(desconhecido.especialidade, "geral")==0 && desconhecido.estado == 0)
                         {
                             listasDeEspera[0]++;
                             close(utente_fd);
                         }
 
-                        else if(strcmp(desconhecido.especialidade, "estomatologia")==0)
+                        else if(strcmp(desconhecido.especialidade, "estomatologia")==0 && desconhecido.estado == 0)
                         {
                             listasDeEspera[1]++;
                             close(utente_fd);
                         }
 
-                        else if(strcmp(desconhecido.especialidade, "ortopedia")==0)
+                        else if(strcmp(desconhecido.especialidade, "ortopedia")==0 && desconhecido.estado == 0)
                         {
                             listasDeEspera[2]++;
                             close(utente_fd);
                         }
 
-                        else if(strcmp(desconhecido.especialidade, "oftalmologia")==0)
+                        else if(strcmp(desconhecido.especialidade, "oftalmologia")==0 && desconhecido.estado == 0)
                         {
                             listasDeEspera[3]++;
                             close(utente_fd);
                         }
-                        else if(strcmp(desconhecido.especialidade, "neurologia")==0)
+                        else if(strcmp(desconhecido.especialidade, "neurologia")==0 && desconhecido.estado == 0)
                         {
                             listasDeEspera[4]++;
                             close(utente_fd);

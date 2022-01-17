@@ -91,11 +91,7 @@ int main(int argc, char **argv)
                 {
                     char aux[TAM_MAX];
                     read(utente_fd, &aux, sizeof(aux));
-                    printf("\nEspecialidade e pioridade: %s", aux);
-                    char *ptr = strtok(aux, delim);
-                    strcpy(utente.especialidade, ptr);
-                    ptr = strtok(NULL, delim);
-                    utente.prioridade = atoi(ptr);
+                    printf("\nEspecialidade e pioridade: %s\n", aux);
                     recebi = 1;
                 }
                 else
