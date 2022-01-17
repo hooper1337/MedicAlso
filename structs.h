@@ -22,7 +22,7 @@
 char UTENTE_FIFO_FINAL[TAM_MAX];
 char ESPECIALISTA_FIFO_FINAL[TAM_MAX];
 
-// struct para utentes e clientes
+// struct para utentes e medicos
 struct pessoa
 {
     char pNome[TAM_MAX];
@@ -37,20 +37,27 @@ struct pessoa
     int tempo;
 } typedef Pessoa;
 
-// struct para o balcao comunicar com os clientes
+
 struct balcao
 {
     int freq;
     int numUtentes;
     int numMedicos;
-    int geral;
-    int estomatologia;
-    int ortopedia;
-    int oftalmologia;
-    int neurologia;
     Pessoa *utentes;
     Pessoa *especialistas;
 } typedef Balcao;
 
 void reset(Pessoa *aux);
 void removerPessoa(Balcao *aux, int pid, int tipoPessoa, int maxMedicos, int maxUtentes);
+void adicionaNovaPessoa(Balcao *aux, Pessoa pessoa, int maxMedicos, int maxUtentes);
+void reset(Pessoa *aux);
+void removerPessoa(Balcao *aux, int pid, int tipoPessoa, int maxMedicos, int maxUtentes);
+void resetTempo(Balcao *aux, int pid, int maxMedicos);
+void *aumentarTempo(void *dados);
+void atribuiConsulta(Balcao *aux, int maxMedicos, int maxUtentes);
+void comUtentes(Balcao *aux, int maxMedicos, int maxUtentes);
+void comEspecialistas(Balcao *aux, int maxMedicos, int maxUtentes);
+bool delUtX(Balcao* aux,char *nome, int maxMedicos,  int maxUtentes);
+void *listaListas(void* dados);
+void encerrar(Balcao *aux, int maxMedicos, int maxClientes);
+int max(int a, int b);
